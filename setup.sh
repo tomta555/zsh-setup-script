@@ -10,6 +10,7 @@
 
 # The list of core, mandatory packages (required for Zsh installation and operation).
 CORE_PACKAGES="zsh git curl neovim" 
+QUIET_MODE=false # Global flag for quiet mode
 
 # --- 2. OS & PACKAGE MANAGER DETECTION ---
 
@@ -58,7 +59,11 @@ install_prerequisites() {
     # Update package lists first for APT
     if [[ "$PKG_MANAGER" == "apt" ]]; then
         echo "Running sudo apt update..."
-        sudo apt update
+        if $QUIET_MODE; then
+            sudo apt update > /dev/null 2>&1
+        else
+            sudo apt update
+        fi
     fi
     
     for pkg in $mandatory_packages; do
@@ -69,8 +74,13 @@ install_prerequisites() {
 
     if [ -n "$mandatory_missing" ]; then
         echo "Installing mandatory packages: $mandatory_missing"
-        # Execute the installation command
-        $INSTALL_CMD $mandatory_missing
+        if $QUIET_MODE; then
+            # Execute the installation command silently
+            $INSTALL_CMD $mandatory_missing > /dev/null 2>&1
+        else
+            # Execute the installation command verbosely
+            $INSTALL_CMD $mandatory_missing
+        fi
         
         if [ $? -ne 0 ]; then
             echo "Error: Failed to install one or more MANDATORY packages ($mandatory_missing). Aborting setup."
@@ -90,9 +100,15 @@ install_prerequisites() {
         fi
 
         echo "Attempting to install $pkg..."
-        # We need to run the install command individually here to capture its specific exit code
-        $INSTALL_CMD "$pkg" 2>/dev/null 
-        install_status=$?
+        local install_status=0
+        if $QUIET_MODE; then
+            $INSTALL_CMD "$pkg" > /dev/null 2>&1
+            install_status=$?
+        else
+            # We still suppress stderr here to avoid displaying expected package manager warnings
+            $INSTALL_CMD "$pkg" 2>/dev/null 
+            install_status=$?
+        fi
 
         if [ $install_status -ne 0 ]; then
             echo "Warning: Failed to install optional package '$pkg' (Exit code: $install_status). This package will be skipped."
@@ -107,15 +123,28 @@ install_prerequisites() {
     else
         echo "Attempting to install 'fd' or 'fd-find'..."
         
+        local install_status=0
+        
         # Try 'fd' first
-        $INSTALL_CMD "fd" 2>/dev/null 
-        install_status=$?
+        if $QUIET_MODE; then
+            $INSTALL_CMD "fd" > /dev/null 2>&1
+            install_status=$?
+        else
+            $INSTALL_CMD "fd" 2>/dev/null 
+            install_status=$?
+        fi
         
         if [ $install_status -ne 0 ]; then
             # If 'fd' failed, try 'fd-find'
             echo "Package 'fd' not found. Attempting to install 'fd-find' instead..."
-            $INSTALL_CMD "fd-find" 2>/dev/null 
-            install_status=$?
+            
+            if $QUIET_MODE; then
+                $INSTALL_CMD "fd-find" > /dev/null 2>&1
+                install_status=$?
+            else
+                $INSTALL_CMD "fd-find" 2>/dev/null 
+                install_status=$?
+            fi
             
             if [ $install_status -ne 0 ]; then
                 echo "Warning: Failed to install 'fd' or 'fd-find'. This utility will be skipped."
@@ -149,10 +178,18 @@ install_prerequisites() {
     else
         echo "Attempting to install zoxide..."
         # Use the official installation method for zoxide
-        if curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh; then
-            echo "zoxide installed successfully."
+        if $QUIET_MODE; then
+            if curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh > /dev/null 2>&1; then
+                echo "zoxide installed successfully."
+            else
+                echo "Warning: Failed to install optional package 'zoxide'. This package will be skipped."
+            fi
         else
-            echo "Warning: Failed to install optional package 'zoxide'. This package will be skipped."
+            if curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh; then
+                echo "zoxide installed successfully."
+            else
+                echo "Warning: Failed to install optional package 'zoxide'. This package will be skipped."
+            fi
         fi
     fi
 }
@@ -160,18 +197,24 @@ install_prerequisites() {
 # --- 4. ZSH CONFIGURATION AND OH MY ZSH INSTALLATION ---
 
 install_oh_my_zsh() {
-    echo -e "\n--- Installing Oh My Zsh ---"
+    if ! $QUIET_MODE; then
+        echo -e "\n--- Installing Oh My Zsh ---"
+    fi
     
     if [ -d "$HOME/.oh-my-zsh" ]; then
-        echo "Oh My Zsh is already installed. Skipping installation."
+        if ! $QUIET_MODE; then
+            echo "Oh My Zsh is already installed. Skipping installation."
+        fi
     else
-        # Use the curl method for unattended installation
+        # Use the curl method for unattended installation (output is largely suppressed by --unattended)
         sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
         if [ $? -ne 0 ]; then
             echo "Error: Failed to install Oh My Zsh."
             exit 1
         fi
-        echo "Oh My Zsh installed successfully."
+        if ! $QUIET_MODE; then
+            echo "Oh My Zsh installed successfully."
+        fi
     fi
 }
 
@@ -521,6 +564,14 @@ set_default_shell() {
 # --- 5. EXECUTION FLOW ---
 
 main() {
+    # Check for arguments
+    for arg in "$@"; do
+        if [ "$arg" == "--quiet" ]; then
+            QUIET_MODE=true
+            echo "Running setup in quiet mode. Installation details suppressed."
+        fi
+    done
+    
     # 1. Detect OS and set package manager variables
     detect_os
     
@@ -553,4 +604,4 @@ main() {
 }
 
 # Execute the main function
-main
+main "$@"
