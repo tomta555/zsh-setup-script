@@ -89,8 +89,8 @@ install_prerequisites() {
     fi
     echo "Mandatory packages (Zsh, Git, Curl, Neovim) installed or already present."
 
-    # 3.2. Install Optional Packages (ripgrep, fzf, fastfetch, eza) - Skipping on failure
-    echo -e "\n--- Installing Optional Utility Packages (ripgrep, fzf, fd, fastfetch, eza) ---"
+    # 3.2. Install Optional Packages (ripgrep, fzf, fastfetch, eza, fd, bat) - Skipping on failure
+    echo -e "\n--- Installing Optional Utility Packages (ripgrep, fzf, fastfetch, eza, fd, bat) ---"
     local optional_packages="ripgrep fzf fastfetch eza"
     
     for pkg in $optional_packages; do
@@ -144,7 +144,7 @@ install_prerequisites() {
             else
                 $INSTALL_CMD "fd-find" 2>/dev/null 
                 install_status=$?
-            fi
+            </if>
             
             if [ $install_status -ne 0 ]; then
                 echo "Warning: Failed to install 'fd' or 'fd-find'. This utility will be skipped."
@@ -161,7 +161,7 @@ install_prerequisites() {
                     else
                         echo "Warning: fdfind binary not found after installation. Skipping symlink creation."
                     fi
-                fi
+                </if>
             fi
         else
             echo "fd installed successfully."
@@ -179,6 +179,7 @@ install_prerequisites() {
     else
         echo "Attempting to install 'bat'..."
         local install_status=0
+        
         if $QUIET_MODE; then
             $INSTALL_CMD "bat" > /dev/null 2>&1
             install_status=$?
@@ -187,10 +188,20 @@ install_prerequisites() {
             install_status=$?
         fi
 
-        if [ $install_status -ne 0 ]; then
-            echo "Warning: Failed to install 'bat'. This utility will be skipped."
+        if [ $install_status -eq 0 ]; then
+            # Check if installation resulted in 'bat' or 'batcat'
+            if command -v "bat" > /dev/null 2>&1; then
+                echo "bat installed successfully."
+            elif command -v "batcat" > /dev/null 2>&1; then
+                echo "Package 'bat' installed 'batcat'. Creating symlink to 'bat' in ~/.local/bin."
+                mkdir -p "$HOME/.local/bin"
+                ln -s "$(which batcat)" "$HOME/.local/bin/bat"
+                echo "bat linked successfully."
+            else
+                echo "Warning: Installation of 'bat' succeeded but binary 'bat'/'batcat' not found. Skipping."
+            fi
         else
-            echo "bat installed successfully."
+            echo "Warning: Failed to install 'bat' (Exit code: $install_status). This utility will be skipped."
         fi
     fi
     echo "Finished installing general optional packages."
