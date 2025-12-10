@@ -39,7 +39,7 @@ detect_os() {
                 echo "Error: Unsupported distribution ($ID). This script only supports Ubuntu/Debian, CentOS, and Rocky Linux."
                 exit 1
                 ;;
-        esac
+        esac # CORRECTED: Changed </case "$ID" in to esac
         echo "Detected OS: $NAME ($VERSION_ID). Using package manager: $PKG_MANAGER."
     else
         echo "Error: Could not find /etc/os-release. Cannot determine distribution."
@@ -405,6 +405,33 @@ function whatsmyip () {
 EOF
 }
 
+install_custom_scripts() {
+    if ! $QUIET_MODE; then
+        echo -e "\n--- Installing Custom Scripts ---"
+    fi
+    local SCRIPT_DIR_LOCAL="$(dirname "$(readlink -f "$0")")"
+    local SCRIPT_SOURCE="$SCRIPT_DIR_LOCAL/custom_scripts"
+    local SCRIPT_DESTINATION="$HOME/.local/bin"
+
+    if [ ! -d "$SCRIPT_SOURCE" ]; then
+        echo "Warning: Custom script source directory '$SCRIPT_SOURCE' not found. Skipping custom script installation."
+        return
+    fi
+    
+    mkdir -p "$SCRIPT_DESTINATION"
+    
+    if ! $QUIET_MODE; then
+        echo "Copying scripts from $SCRIPT_SOURCE to $SCRIPT_DESTINATION and setting permissions..."
+        cp "$SCRIPT_SOURCE"/* "$SCRIPT_DESTINATION"/
+        chmod +x "$SCRIPT_DESTINATION"/*
+        echo "Custom scripts installed successfully."
+    else
+        cp "$SCRIPT_SOURCE"/* "$SCRIPT_DESTINATION"/ > /dev/null 2>&1
+        chmod +x "$SCRIPT_DESTINATION"/* > /dev/null 2>&1
+        echo "Custom scripts installed silently."
+    fi
+}
+
 install_fonts() {
     if ! $QUIET_MODE; then
         echo -e "\n--- Installing Custom Fonts ---"
@@ -702,6 +729,9 @@ main() {
     
     # 4.6. Create modular config directory and aliases file
     setup_zsh_modular_config
+    
+    # 4.7. Install Custom Scripts
+    install_custom_scripts
     
     # 5. Configure ZshRC
     configure_zshrc
