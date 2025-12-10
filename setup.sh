@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # 
 # Zsh and Oh My Zsh Automated Setup Script
 # This script installs Zsh, the Oh My Zsh framework, and key plugins
@@ -230,6 +230,31 @@ install_prerequisites() {
     fi
 }
 
+# .zshrc Backup and Cleanup ---
+
+create_zshrc_backup() {
+    local ZSHRC_PATH="$HOME/.zshrc"
+    local BACKUP_PATH="$HOME/.zshrc.bak"
+    
+    if [ -f "$ZSHRC_PATH" ]; then
+        if ! $QUIET_MODE; then
+            echo -e "\n--- Creating Backup of Existing ~/.zshrc ---"
+        fi
+        
+        cp "$ZSHRC_PATH" "$BACKUP_PATH"
+        
+        if [ $? -eq 0 ]; then
+            if ! $QUIET_MODE; then
+                echo "Backup created successfully: $BACKUP_PATH"
+                # Remove the original file after successful backup
+                echo "Removing original ~/.zshrc to allow clean Oh My Zsh base installation."
+            fi
+            rm -f "$ZSHRC_PATH"
+        else
+            echo "Warning: Failed to create backup of $ZSHRC_PATH. Original file retained."
+        fi
+    fi
+}
 # --- 4. ZSH CONFIGURATION AND OH MY ZSH INSTALLATION ---
 
 install_oh_my_zsh() {
@@ -243,6 +268,7 @@ install_oh_my_zsh() {
         fi
     else
         # Use the curl method for unattended installation (output is largely suppressed by --unattended)
+        # This will create a fresh ~/.zshrc because we removed the old one in create_zshrc_backup
         sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
         if [ $? -ne 0 ]; then
             echo "Error: Failed to install Oh My Zsh."
@@ -678,7 +704,10 @@ main() {
     # 2. Install Zsh, Git, Curl, and the new utilities
     install_prerequisites
     
-    # 3. Install Oh My Zsh
+    # 2.5. Create ZshRC Backup AND REMOVE ORIGINAL for clean OMZ install
+    create_zshrc_backup
+    
+    # 3. Install Oh My Zsh (This will create a clean ~/.zshrc now)
     install_oh_my_zsh
     
     # 4. Install Plugins
@@ -702,6 +731,9 @@ main() {
     # 6. Set Default Shell
     set_default_shell
     
+    # User requested message about the backup file
+    echo -e "\nℹ️ IMPORTANT: Your original/previous ~/.zshrc file was backed up to ~/.zshrc.bak before configuration began."
+
     echo -e "\n✅ Setup Complete! ✅"
     echo "Please log out and log back in, or run 'exec zsh' to start using your new Zsh shell with plugins."
 }
