@@ -2,15 +2,29 @@
 
 This script installs Zsh, the Oh My Zsh framework, and key plugins on Debian/Ubuntu, CentOS, and Rocky Linux systems.
 
-## Prerequisites
-
-- Bash shell
-- Root or sudo privileges
-
 ## Installation
+```sh
+git clone --depth 1 https://github.com/tomta555/zsh-setup-script.git ~/.zsh-setup
+~/.zsh-setup/setup.sh --quiet
+```
 
-1. Run the script with `bash setup.sh`. 
-To reduce verbosity, use the `bash setup.sh --quiet` instead.
+After the installation is completed, restart the shell process/session to setup p10k configure.
+
+- **Important**: This script is intended for use on a flesh system installation or on a system that does not have zsh. 
+- If this script is executed on a system with zsh, the `.zshrc` file will be backed up at `~/.zshrc.bak`
+
+## What the script does
+
+- Install OS update
+- Install zsh, git, curl, and neovim
+- Install bat, eza, fastfetch, fd, fzf, and zoxide
+- Create .zshrc backup and remove original .zshrc
+- Install Oh My Zsh
+- Install autoupdate, syntax highlight, and auto-suggestion OMZ plugin
+- Install powerlevel10k theme
+- Configure the .zshrc file and add command aliases
+- Install MesloLGS NF font
+- Set default shell to zsh
 
 ## Supported Operating Systems
 
@@ -18,7 +32,7 @@ To reduce verbosity, use the `bash setup.sh --quiet` instead.
 - CentOS
 - Rocky Linux
 
-## References
+## For References
 - [bat](https://github.com/sharkdp/bat)
 - [eza](https://github.com/eza-community/eza)
 - [fastfetch](https://github.com/fastfetch-cli/fastfetch)
