@@ -39,7 +39,7 @@ detect_os() {
                 echo "Error: Unsupported distribution ($ID). This script only supports Ubuntu/Debian, CentOS, and Rocky Linux."
                 exit 1
                 ;;
-        esac # CORRECTED: Changed </case "$ID" in to esac
+        esac 
         echo "Detected OS: $NAME ($VERSION_ID). Using package manager: $PKG_MANAGER."
     else
         echo "Error: Could not find /etc/os-release. Cannot determine distribution."
