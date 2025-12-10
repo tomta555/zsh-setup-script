@@ -661,58 +661,7 @@ set_default_shell() {
     fi
 }
 
-# --- 5. INSTALLATION VERIFICATION ---
-
-verify_installation() {
-    echo -e "\n--- Verifying All Utility Installations ---"
-    
-    local packages=(
-        "git" "Git"
-        "curl" "Curl"
-        "nvim" "Neovim"
-        "rg" "Ripgrep"
-        "fzf" "Fzf"
-        "bat" "Bat"
-        "fd" "Fd"
-        "fastfetch" "Fastfetch"
-        "eza" "Eza"
-        "zoxide" "Zoxide"
-    )
-    
-    local success_count=0
-    local fail_count=0
-    
-    for ((i = 0; i < ${#packages[@]}; i += 2)); do
-        local cmd_name="${packages[i]}"
-        local pkg_name="${packages[i+1]}"
-        
-        if command -v "$cmd_name" > /dev/null 2>&1; then
-            echo "✅ $pkg_name: Installed"
-            success_count=$((success_count + 1))
-        else
-            # Special check for batcat if bat failed
-            if [ "$cmd_name" == "bat" ] && command -v "batcat" > /dev/null 2>&1; then
-                echo "✅ $pkg_name: Installed (via batcat symlink)"
-                success_count=$((success_count + 1))
-            # Special check for fdfind if fd failed
-            elif [ "$cmd_name" == "fd" ] && command -v "fdfind" > /dev/null 2>&1; then
-                echo "✅ $pkg_name: Installed (via fdfind symlink/alias)"
-                success_count=$((success_count + 1))
-            else
-                echo "❌ $pkg_name: FAILED (Command '$cmd_name' not found)"
-                fail_count=$((fail_count + 1))
-            fi
-        fi
-    done
-    
-    echo -e "\nInstallation Summary: $success_count succeeded, $fail_count failed."
-    if [ $fail_count -gt 0 ]; then
-        echo "Note: Failed utilities were optional and did not halt Zsh setup."
-    fi
-}
-
-
-# --- 6. EXECUTION FLOW ---
+# --- 5. EXECUTION FLOW ---
 
 main() {
     # Check for arguments
@@ -752,9 +701,6 @@ main() {
     
     # 6. Set Default Shell
     set_default_shell
-    
-    # 7. Verify all installations
-    verify_installation
     
     echo -e "\n✅ Setup Complete! ✅"
     echo "Please log out and log back in, or run 'exec zsh' to start using your new Zsh shell with plugins."
