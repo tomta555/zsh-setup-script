@@ -89,9 +89,9 @@ install_prerequisites() {
     fi
     echo "Mandatory packages (Zsh, Git, Curl, Neovim) installed or already present."
 
-    # 3.2. Install Optional Packages (ripgrep, fzf, bat, fd, fastfetch, eza) - Skipping on failure
-    echo -e "\n--- Installing Optional Utility Packages (ripgrep, fzf, bat, fd, fastfetch, eza) ---"
-    local optional_packages="ripgrep fzf bat fastfetch eza"
+    # 3.2. Install Optional Packages (ripgrep, fzf, fastfetch, eza) - Skipping on failure
+    echo -e "\n--- Installing Optional Utility Packages (ripgrep, fzf, fd, fastfetch, eza) ---"
+    local optional_packages="ripgrep fzf fastfetch eza"
     
     for pkg in $optional_packages; do
         if command -v "$pkg" > /dev/null 2>&1; then
@@ -117,7 +117,7 @@ install_prerequisites() {
         fi
     done
 
-    # Handle fd / fd-find specially
+    # --- Handle fd / fd-find specially ---
     if command -v "fd" > /dev/null 2>&1; then
         echo "fd is already installed. Skipping."
     else
@@ -151,9 +151,8 @@ install_prerequisites() {
             else
                 echo "fd-find installed successfully."
                 
-                # New Symlink Creation Logic for Debian/Ubuntu (apt systems)
+                # Symlink Creation Logic for Debian/Ubuntu (apt systems)
                 if [[ "$PKG_MANAGER" == "apt" ]]; then
-                    # Ensure ~/.local/bin exists for symlink creation
                     mkdir -p "$HOME/.local/bin"
                     local FDFIND_PATH=$(which fdfind)
                     if [ -x "$FDFIND_PATH" ]; then
@@ -166,6 +165,32 @@ install_prerequisites() {
             fi
         else
             echo "fd installed successfully."
+        fi
+    fi
+    
+    # --- Handle bat / batcat specially ---
+    if command -v "bat" > /dev/null 2>&1; then
+        echo "bat is already installed. Skipping."
+    elif command -v "batcat" > /dev/null 2>&1; then
+        echo "Found 'batcat'. Creating symlink to 'bat' in ~/.local/bin."
+        mkdir -p "$HOME/.local/bin"
+        ln -s "$(which batcat)" "$HOME/.local/bin/bat"
+        echo "bat linked successfully."
+    else
+        echo "Attempting to install 'bat'..."
+        local install_status=0
+        if $QUIET_MODE; then
+            $INSTALL_CMD "bat" > /dev/null 2>&1
+            install_status=$?
+        else
+            $INSTALL_CMD "bat" 2>/dev/null 
+            install_status=$?
+        fi
+
+        if [ $install_status -ne 0 ]; then
+            echo "Warning: Failed to install 'bat'. This utility will be skipped."
+        else
+            echo "bat installed successfully."
         fi
     fi
     echo "Finished installing general optional packages."
@@ -227,7 +252,11 @@ install_plugins() {
     AUTOSUGGEST_DIR="$ZSH_CUSTOM/plugins/zsh-autosuggestions"
     if [ ! -d "$AUTOSUGGEST_DIR" ]; then
         echo "Installing zsh-autosuggestions..."
-        git clone https://github.com/zsh-users/zsh-autosuggestions "$AUTOSUGGEST_DIR"
+        if $QUIET_MODE; then
+            git clone https://github.com/zsh-users/zsh-autosuggestions "$AUTOSUGGEST_DIR" > /dev/null 2>&1
+        else
+            git clone https://github.com/zsh-users/zsh-autosuggestions "$AUTOSUGGEST_DIR"
+        fi
     else
         echo "zsh-autosuggestions already installed."
     fi
@@ -236,7 +265,11 @@ install_plugins() {
     HIGHLIGHT_DIR="$ZSH_CUSTOM/plugins/F-Sy-H"
     if [ ! -d "$HIGHLIGHT_DIR" ]; then
         echo "Installing F-Sy-H..."
-        git clone https://github.com/z-shell/F-Sy-H.git "$HIGHLIGHT_DIR"
+        if $QUIET_MODE; then
+            git clone https://github.com/z-shell/F-Sy-H.git "$HIGHLIGHT_DIR" > /dev/null 2>&1
+        else
+            git clone https://github.com/z-shell/F-Sy-H.git "$HIGHLIGHT_DIR"
+        fi
     else
         echo "F-Sy-H already installed."
     fi
@@ -246,26 +279,47 @@ install_plugins() {
     AUTOUPDATE_DIR="$ZSH_CUSTOM/plugins/autoupdate"
     if [ ! -d "$AUTOUPDATE_DIR" ]; then
         echo "Installing custom autoupdate-oh-my-zsh-plugins..."
-        git clone https://github.com/tamcore/autoupdate-oh-my-zsh-plugins.git "$AUTOUPDATE_DIR"
+        if $QUIET_MODE; then
+            git clone https://github.com/tamcore/autoupdate-oh-my-zsh-plugins.git "$AUTOUPDATE_DIR" > /dev/null 2>&1
+        else
+            git clone https://github.com/tamcore/autoupdate-oh-my-zsh-plugins.git "$AUTOUPDATE_DIR"
+        fi
     else
         echo "Custom autoupdate plugin already installed."
     fi
 }
 
 install_powerlevel10k() {
-    echo -e "\n--- Installing Powerlevel10k Theme ---"
+    if ! $QUIET_MODE; then
+        echo -e "\n--- Installing Powerlevel10k Theme ---"
+    fi
     
     local P10K_DIR="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k"
     
     if [ -d "$P10K_DIR" ]; then
-        echo "Powerlevel10k is already installed. Skipping."
+        if ! $QUIET_MODE; then
+            echo "Powerlevel10k is already installed. Skipping."
+        fi
     else
-        echo "Cloning Powerlevel10k repository..."
-        git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "$P10K_DIR"
-        if [ $? -ne 0 ]; then
+        if ! $QUIET_MODE; then
+            echo "Cloning Powerlevel10k repository..."
+        fi
+        
+        local clone_status=0
+        if $QUIET_MODE; then
+            git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "$P10K_DIR" > /dev/null 2>&1
+            clone_status=$?
+        else
+            git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "$P10K_DIR"
+            clone_status=$?
+        fi
+
+        if [ $clone_status -ne 0 ]; then
             echo "Error: Failed to clone Powerlevel10k. Skipping theme installation."
         else
-            echo "Powerlevel10k installed successfully."
+            if ! $QUIET_MODE; then
+                echo "Powerlevel10k installed successfully."
+            fi
         fi
     fi
 }
@@ -352,7 +406,9 @@ EOF
 }
 
 install_fonts() {
-    echo -e "\n--- Installing Custom Fonts ---"
+    if ! $QUIET_MODE; then
+        echo -e "\n--- Installing Custom Fonts ---"
+    fi
     # Find the directory where this script is located
     local SCRIPT_DIR_LOCAL="$(dirname "$(readlink -f "$0")")"
     local FONT_SOURCE="$SCRIPT_DIR_LOCAL/fonts"
@@ -364,19 +420,25 @@ install_fonts() {
     fi
     
     mkdir -p "$FONT_DESTINATION"
-    echo "Copying fonts from $FONT_SOURCE to $FONT_DESTINATION..."
+    if ! $QUIET_MODE; then
+        echo "Copying fonts from $FONT_SOURCE to $FONT_DESTINATION..."
+    fi
     
-    # Copy all font file types
-    find "$FONT_SOURCE" -type f \( -iname "*.ttf" -o -iname "*.otf" -o -iname "*.woff" -o -iname "*.woff2" \) -exec cp {} "$FONT_DESTINATION" \;
+    # Copy all font file types, suppressing output
+    find "$FONT_SOURCE" -type f \( -iname "*.ttf" -o -iname "*.otf" -o -iname "*.woff" -o -iname "*.woff2" \) -exec cp {} "$FONT_DESTINATION" \; > /dev/null 2>&1
     
     # Check the result of the copy command
     if [ $? -eq 0 ]; then
-        echo "Fonts copied successfully. Updating font cache..."
+        if ! $QUIET_MODE; then
+            echo "Fonts copied successfully. Updating font cache..."
+        fi
         
-        # Check if fc-cache exists before running
+        # Check if fc-cache exists before running and suppress output
         if command -v fc-cache > /dev/null 2>&1; then
-            fc-cache -fv
-            echo "Font cache updated. You may need to restart your terminal emulator to see new fonts."
+            fc-cache -fv > /dev/null 2>&1
+            if ! $QUIET_MODE; then
+                echo "Font cache updated. You may need to restart your terminal emulator to see new fonts."
+            fi
         else
             echo "Warning: fc-cache command not found. Font cache may not be immediately available."
         fi
@@ -561,7 +623,58 @@ set_default_shell() {
     fi
 }
 
-# --- 5. EXECUTION FLOW ---
+# --- 5. INSTALLATION VERIFICATION ---
+
+verify_installation() {
+    echo -e "\n--- Verifying All Utility Installations ---"
+    
+    local packages=(
+        "git" "Git"
+        "curl" "Curl"
+        "nvim" "Neovim"
+        "rg" "Ripgrep"
+        "fzf" "Fzf"
+        "bat" "Bat"
+        "fd" "Fd"
+        "fastfetch" "Fastfetch"
+        "eza" "Eza"
+        "zoxide" "Zoxide"
+    )
+    
+    local success_count=0
+    local fail_count=0
+    
+    for ((i = 0; i < ${#packages[@]}; i += 2)); do
+        local cmd_name="${packages[i]}"
+        local pkg_name="${packages[i+1]}"
+        
+        if command -v "$cmd_name" > /dev/null 2>&1; then
+            echo "✅ $pkg_name: Installed"
+            success_count=$((success_count + 1))
+        else
+            # Special check for batcat if bat failed
+            if [ "$cmd_name" == "bat" ] && command -v "batcat" > /dev/null 2>&1; then
+                echo "✅ $pkg_name: Installed (via batcat symlink)"
+                success_count=$((success_count + 1))
+            # Special check for fdfind if fd failed
+            elif [ "$cmd_name" == "fd" ] && command -v "fdfind" > /dev/null 2>&1; then
+                echo "✅ $pkg_name: Installed (via fdfind symlink/alias)"
+                success_count=$((success_count + 1))
+            else
+                echo "❌ $pkg_name: FAILED (Command '$cmd_name' not found)"
+                fail_count=$((fail_count + 1))
+            fi
+        fi
+    done
+    
+    echo -e "\nInstallation Summary: $success_count succeeded, $fail_count failed."
+    if [ $fail_count -gt 0 ]; then
+        echo "Note: Failed utilities were optional and did not halt Zsh setup."
+    fi
+}
+
+
+# --- 6. EXECUTION FLOW ---
 
 main() {
     # Check for arguments
@@ -598,6 +711,9 @@ main() {
     
     # 6. Set Default Shell
     set_default_shell
+    
+    # 7. Verify all installations
+    verify_installation
     
     echo -e "\n✅ Setup Complete! ✅"
     echo "Please log out and log back in, or run 'exec zsh' to start using your new Zsh shell with plugins."
