@@ -144,7 +144,7 @@ install_prerequisites() {
             else
                 $INSTALL_CMD "fd-find" 2>/dev/null 
                 install_status=$?
-            </if>
+            fi
             
             if [ $install_status -ne 0 ]; then
                 echo "Warning: Failed to install 'fd' or 'fd-find'. This utility will be skipped."
@@ -161,7 +161,7 @@ install_prerequisites() {
                     else
                         echo "Warning: fdfind binary not found after installation. Skipping symlink creation."
                     fi
-                </if>
+                fi
             fi
         else
             echo "fd installed successfully."
