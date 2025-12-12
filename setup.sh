@@ -9,7 +9,7 @@
 # --- 1. CONFIGURATION VARIABLES ---
 
 # The list of core, mandatory packages (required for Zsh installation and operation).
-CORE_PACKAGES="zsh git curl neovim" 
+CORE_PACKAGES="zsh git curl" 
 QUIET_MODE=false # Global flag for quiet mode
 
 # --- 2. OS & PACKAGE MANAGER DETECTION ---
@@ -65,7 +65,17 @@ install_prerequisites() {
             sudo apt update
         fi
     fi
-    
+
+    # Update package lists first for DNF
+    if [[ "$PKG_MANAGER" == "dnf" ]]; then
+        echo "Running dnf install epel-release..."
+        if $QUIET_MODE; then
+            sudo dnf install epel-release > /dev/null 2>&1
+        else
+            sudo dnf install epel-release
+        fi
+    fi
+
     for pkg in $mandatory_packages; do
         if ! command -v "$pkg" > /dev/null 2>&1; then
             mandatory_missing+="$pkg "
@@ -87,7 +97,7 @@ install_prerequisites() {
             exit 1
         fi
     fi
-    echo "Mandatory packages (Zsh, Git, Curl, Neovim) installed or already present."
+    echo "Mandatory packages (Zsh, Git, Curl) installed or already present."
 
     # 3.2. Install Optional Packages (ripgrep, fzf, fastfetch, eza, fd, bat) - Skipping on failure
     echo -e "\n--- Installing Optional Utility Packages (ripgrep, fzf, fastfetch, eza, fd, bat) ---"
@@ -380,32 +390,29 @@ alias zshreload='source ~/.zshrc'
 
 # Alias's for multiple directory listing commands
 alias la='ls -Alh'                  # show hidden files
-alias ls='ls -aFh --color=always'   # add colors and file type extensions
-alias lx='ls -lXBh'                 # sort by extension
-alias lk='ls -lSrh'                 # sort by size
-alias lc='ls -ltcrh'                # sort by change time
-alias lu='ls -lturh'                # sort by access time
-alias lr='ls -lRh'                  # recursive ls
-alias lt='ls -ltrh'                 # sort by date
-alias lm='ls -alh |more'            # pipe through 'more'
-alias lw='ls -xAh'                  # wide listing format
+alias ls='ls -Fh --color=always'    # add colors and file type extensions
+# alias lx='ls -lXBh'                 # sort by extension
+# alias lk='ls -lSrh'                 # sort by size
+# alias lc='ls -ltcrh'                # sort by change time
+# alias lu='ls -lturh'                # sort by access time
+# alias lr='ls -lRh'                  # recursive ls
+# alias lt='ls -ltrh'                 # sort by date
+# alias lm='ls -alh |more'            # pipe through 'more'
+# alias lw='ls -xAh'                  # wide listing format
 alias ll='ls -Fls'                  # long listing format
-alias labc='ls -lap'                # alphabetical sort
-alias lf="ls -F | grep -v /"        # files only
-alias ldir="ls -d */"               # directories only
-alias lla='ls -Al'                  # List and Hidden Files
-alias las='ls -A'                   # Hidden Files
-alias lls='ls -l'                   # List
+# alias labc='ls -lap'                # alphabetical sort
+# alias lf="ls -F | grep -v /"        # files only
+# alias ldir="ls -d */"               # directories only
+# alias lla='ls -Al'                  # List and Hidden Files
+# alias las='ls -A'                   # Hidden Files
+# alias lls='ls -l'                   # List
 
 alias da='date "+%Y-%m-%d %A %T %Z"'
 
-# Alias's to modified commands
 alias cd='z'
 alias cp='cp -i'
 alias mv='mv -i'
 alias mkdir='mkdir -p'
-alias vim='nvim'
-alias vi='nvim'
 
 # Search running processes
 alias topcpu="/bin/ps -eo pcpu,pid,user,args | sort -k 1 -r | head -10"

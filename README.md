@@ -15,7 +15,7 @@ After the installation is completed, restart the shell process/session to setup 
 
 ## What the script does
 
-- Install OS update
+- Update package lists
 - Install zsh, git, curl, and neovim
 - Install bat, eza, fastfetch, fd, fzf, and zoxide
 - Create .zshrc backup and remove original .zshrc
