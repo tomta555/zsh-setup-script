@@ -235,6 +235,7 @@ install_prerequisites() {
 create_zshrc_backup() {
     local ZSHRC_PATH="$HOME/.zshrc"
     local BACKUP_PATH="$HOME/.zshrc.bak"
+    local OMZ_TEMPLATE="$HOME/.oh-my-zsh/templates/zshrc.zsh-template"
     
     echo -e "\n--- Creating Backup of Existing ~/.zshrc ---"
     
@@ -244,20 +245,21 @@ create_zshrc_backup() {
         
         if [ $? -eq 0 ]; then
             echo "Backup created successfully: $BACKUP_PATH"
+            echo "Removing original ~/.zshrc to ensure a clean base."
+            
+            # 1. Always remove the existing .zshrc for a fresh installation
+            rm -f "$ZSHRC_PATH"
 
-            # Check if Oh My Zsh is already installed.
-            # If it is, do NOT delete the zshrc, as the OMZ installer will be skipped 
-            # and we need the file present for the configure_zshrc step.
+            # 2. If OMZ is installed, copy its template back so configure_zshrc has a base file.
             if [ -d "$HOME/.oh-my-zsh" ]; then
-                if ! $QUIET_MODE; then
-                    echo "Oh My Zsh directory found. Keeping original ~/.zshrc for subsequent customization."
+                if [ -f "$OMZ_TEMPLATE" ]; then
+                    cp "$OMZ_TEMPLATE" "$ZSHRC_PATH"
+                    echo "Replaced ~/.zshrc with a fresh Oh My Zsh template."
+                else
+                    echo "Warning: Oh My Zsh is installed, but the template file was not found. Proceeding with original ~/.zshrc."
+                    echo "Original ~/.zshrc restored from backup."
+                    cp "$BACKUP_PATH" "$ZSHRC_PATH"
                 fi
-            else
-                if ! $QUIET_MODE; then
-                    # Remove the original file after successful backup
-                    echo "Removing original ~/.zshrc to allow clean Oh My Zsh base installation."
-                fi
-                rm -f "$ZSHRC_PATH"
             fi
         else
             echo "Warning: Failed to create backup of $ZSHRC_PATH. Original file retained."
@@ -709,10 +711,10 @@ main() {
     # 2. Install Zsh, Git, Curl, and the new utilities
     install_prerequisites
     
-    # 2.5. Create ZshRC Backup AND REMOVE ORIGINAL for clean OMZ install (unless OMZ is already present)
+    # 2.5. Create ZshRC Backup AND REMOVE ORIGINAL for clean OMZ install
     create_zshrc_backup
     
-    # 3. Install Oh My Zsh (This will create a clean ~/.zshrc now, if OMZ was not already installed)
+    # 3. Install Oh My Zsh (This will either install it or skip, but the ~/.zshrc is already a clean template)
     install_oh_my_zsh
     
     # 4. Install Plugins
