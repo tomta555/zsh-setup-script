@@ -236,20 +236,29 @@ create_zshrc_backup() {
     local ZSHRC_PATH="$HOME/.zshrc"
     local BACKUP_PATH="$HOME/.zshrc.bak"
     
+    echo -e "\n--- Creating Backup of Existing ~/.zshrc ---"
+    
     if [ -f "$ZSHRC_PATH" ]; then
-        if ! $QUIET_MODE; then
-            echo -e "\n--- Creating Backup of Existing ~/.zshrc ---"
-        fi
         
         cp "$ZSHRC_PATH" "$BACKUP_PATH"
         
         if [ $? -eq 0 ]; then
-            if ! $QUIET_MODE; then
-                echo "Backup created successfully: $BACKUP_PATH"
-                # Remove the original file after successful backup
-                echo "Removing original ~/.zshrc to allow clean Oh My Zsh base installation."
+            echo "Backup created successfully: $BACKUP_PATH"
+
+            # Check if Oh My Zsh is already installed.
+            # If it is, do NOT delete the zshrc, as the OMZ installer will be skipped 
+            # and we need the file present for the configure_zshrc step.
+            if [ -d "$HOME/.oh-my-zsh" ]; then
+                if ! $QUIET_MODE; then
+                    echo "Oh My Zsh directory found. Keeping original ~/.zshrc for subsequent customization."
+                fi
+            else
+                if ! $QUIET_MODE; then
+                    # Remove the original file after successful backup
+                    echo "Removing original ~/.zshrc to allow clean Oh My Zsh base installation."
+                fi
+                rm -f "$ZSHRC_PATH"
             fi
-            rm -f "$ZSHRC_PATH"
         else
             echo "Warning: Failed to create backup of $ZSHRC_PATH. Original file retained."
         fi
@@ -258,14 +267,10 @@ create_zshrc_backup() {
 # --- 4. ZSH CONFIGURATION AND OH MY ZSH INSTALLATION ---
 
 install_oh_my_zsh() {
-    if ! $QUIET_MODE; then
-        echo -e "\n--- Installing Oh My Zsh ---"
-    fi
+    echo -e "\n--- Installing Oh My Zsh ---"
     
     if [ -d "$HOME/.oh-my-zsh" ]; then
-        if ! $QUIET_MODE; then
-            echo "Oh My Zsh is already installed. Skipping installation."
-        fi
+        echo "Oh My Zsh is already installed. Skipping installation."
     else
         # Use the curl method for unattended installation (output is largely suppressed by --unattended)
         # This will create a fresh ~/.zshrc because we removed the old one in create_zshrc_backup
@@ -704,10 +709,10 @@ main() {
     # 2. Install Zsh, Git, Curl, and the new utilities
     install_prerequisites
     
-    # 2.5. Create ZshRC Backup AND REMOVE ORIGINAL for clean OMZ install
+    # 2.5. Create ZshRC Backup AND REMOVE ORIGINAL for clean OMZ install (unless OMZ is already present)
     create_zshrc_backup
     
-    # 3. Install Oh My Zsh (This will create a clean ~/.zshrc now)
+    # 3. Install Oh My Zsh (This will create a clean ~/.zshrc now, if OMZ was not already installed)
     install_oh_my_zsh
     
     # 4. Install Plugins
