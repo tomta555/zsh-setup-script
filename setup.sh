@@ -530,7 +530,7 @@ configure_zshrc() {
     echo -e "\n--- Configuring ~/.zshrc ---"
     
     # Define the plugins to enable, using 'autoupdate' (the directory name)
-    local plugins_to_add="autoupdate git zsh-autosuggestions F-Sy-H"
+    local plugins_to_add="autoupdate git F-Sy-H zsh-autosuggestions"
 
     # 1. Set the Powerlevel10k theme using sed
     # This specifically looks for 'ZSH_THEME="..."' and replaces it.
